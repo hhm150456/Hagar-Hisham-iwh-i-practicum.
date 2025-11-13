@@ -1,0 +1,34 @@
+doctype html
+html(lang="en")
+  head
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title= pageTitle || "Update Custom Object Form"
+    link(rel="stylesheet", href="/css/style.css")
+  body
+    header
+      h1= pageTitle || "Update Custom Object Form"
+
+    main
+      form(action="/update-cobj" method="POST" class="update-form")
+        div.form-group
+          label(for="name") Name:
+          input(type="text" id="name" name="name" required placeholder="Enter name")
+
+        div.form-group
+          label(for="animalType") Animal Type:
+          input(type="text" id="animalType" name="animalType" required placeholder="e.g., Dog, Cat")
+
+        div.form-group
+          label(for="age") Age:
+          input(type="number" id="age" name="age" min="0" required placeholder="Enter age")
+
+        div.form-group
+          label(for="breed") Breed:
+          input(type="text" id="breed" name="breed" placeholder="e.g., Labrador, Persian")
+
+        div.form-actions
+          button(type="submit") Submit Record
+          button(type="button" onclick="window.location.href='/'") Cancel
+
+      a.return-link(href="/") Return to the homepage

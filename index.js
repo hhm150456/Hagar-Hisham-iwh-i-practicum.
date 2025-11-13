@@ -1,71 +1,97 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 app.set('view engine', 'pug');
 app.use(express.static(__dirname + '/public'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// * Please DO NOT INCLUDE the private app access token in your repo. Don't do this practicum in your normal account.
-const PRIVATE_APP_ACCESS = '';
+const PORT = process.env.PORT || 3000;
+const HUBSPOT_ACCESS_TOKEN = process.env.PRIVATE_APP_ACCESS;
+const HUBSPOT_API_URL = "https://api.hubapi.com";
 
-// TODO: ROUTE 1 - Create a new app.get route for the homepage to call your custom object data. Pass this data along to the front-end and create a new pug template in the views folder.
+console.log(
+  'Token loaded:',
+  HUBSPOT_ACCESS_TOKEN ? `YES (length ${HUBSPOT_ACCESS_TOKEN.length})` : 'NO'
+);
 
-// * Code for Route 1 goes here
+// -------------------------------------------
+// ROUTE 1 — Homepage (list contacts)
+// -------------------------------------------
+app.get('/', async (req, res) => {
+  const contactsUrl = `${HUBSPOT_API_URL}/crm/v3/objects/contacts`;
 
-// TODO: ROUTE 2 - Create a new app.get route for the form to create or update new custom object data. Send this data along in the next route.
+  try {
+    const response = await axios.get(contactsUrl, {
+      headers: {
+        Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-// * Code for Route 2 goes here
+    const contacts = response.data.results || [];
 
-// TODO: ROUTE 3 - Create a new app.post route for the custom objects form to create or update your custom object data. Once executed, redirect the user to the homepage.
-
-// * Code for Route 3 goes here
-
-/** 
-* * This is sample code to give you a reference for how you should structure your calls. 
-
-* * App.get sample
-app.get('/contacts', async (req, res) => {
-    const contacts = 'https://api.hubspot.com/crm/v3/objects/contacts';
-    const headers = {
-        Authorization: `Bearer ${PRIVATE_APP_ACCESS}`,
-        'Content-Type': 'application/json'
-    }
-    try {
-        const resp = await axios.get(contacts, { headers });
-        const data = resp.data.results;
-        res.render('contacts', { title: 'Contacts | HubSpot APIs', data });      
-    } catch (error) {
-        console.error(error);
-    }
+    res.render('homepage', {
+      title: 'Contacts | HubSpot',
+      contacts,
+    });
+  } catch (error) {
+    console.error('Error fetching contacts:', error.response?.data || error.message);
+    res.status(500).send('Error fetching contacts');
+  }
 });
 
-* * App.post sample
-app.post('/update', async (req, res) => {
-    const update = {
-        properties: {
-            "favorite_book": req.body.newVal
-        }
-    }
-
-    const email = req.query.email;
-    const updateContact = `https://api.hubapi.com/crm/v3/objects/contacts/${email}?idProperty=email`;
-    const headers = {
-        Authorization: `Bearer ${PRIVATE_APP_ACCESS}`,
-        'Content-Type': 'application/json'
-    };
-
-    try { 
-        await axios.patch(updateContact, update, { headers } );
-        res.redirect('back');
-    } catch(err) {
-        console.error(err);
-    }
-
+// -------------------------------------------
+// ROUTE 2 — Show form to create/update a contact
+// -------------------------------------------
+app.get('/edit-contact', (req, res) => {
+  res.render('updateForm', {
+    title: 'Create or Update Contact',
+  });
 });
-*/
 
+// -------------------------------------------
+// ROUTE 3 — Create new contact in HubSpot
+// -------------------------------------------
+app.post('/save-contact', async (req, res) => {
+  const { firstname, lastname, email, phone } = req.body;
 
-// * Localhost
-app.listen(3000, () => console.log('Listening on http://localhost:3000'));
+  const contactData = {
+    properties: {
+      firstname,
+      lastname,
+      email,
+      phone,
+    },
+  };
+
+  try {
+    const response = await axios.post(
+      `${HUBSPOT_API_URL}/crm/v3/objects/contacts`,
+      contactData,
+      {
+        headers: {
+          Authorization: `Bearer ${HUBSPOT_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    console.log('Contact created:', response.data);
+    res.redirect('/');
+  } catch (error) {
+    console.error('Error creating contact:', error.response?.data || error.message);
+    res.status(500).send('Error creating contact');
+  }
+});
+
+// -------------------------------------------
+// SERVER
+// -------------------------------------------
+app.listen(PORT, () => {
+  console.log(`Listening on http://localhost:${PORT}`);
+});

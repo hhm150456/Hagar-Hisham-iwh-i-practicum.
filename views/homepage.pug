@@ -1,0 +1,14 @@
+doctype html
+html
+  head
+    title Contacts
+  body
+    h1 HubSpot Contacts
+
+    a(href="/edit-contact") Add New Contact
+
+    each contact in contacts
+      div
+        h3 #{contact.properties.firstname} #{contact.properties.lastname}
+        p Email: #{contact.properties.email}
+        p Phone: #{contact.properties.phone}
